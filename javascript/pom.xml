@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.kiwi1969.nashorn</groupId>
+        <artifactId>javascript-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <groupId>com.kiwi1969.nashorn</groupId>
+    <artifactId>javascript</artifactId>
+    <packaging>war</packaging>
+
+    <properties>
+        <maven-clean-version>3.3.2</maven-clean-version>
+        <maven-compiler-version>3.13.0</maven-compiler-version>
+        <maven-resources-version>3.3.1</maven-resources-version>
+        <maven-shade-version>3.5.2</maven-shade-version>
+        <nashorn-version>15.7</nashorn-version>
+        <javaee-api-version>8.0.1</javaee-api-version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ibm.cics</groupId>
+            <artifactId>com.ibm.cics.server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.cics</groupId>
+            <artifactId>com.ibm.cics.server.invocation.annotations</artifactId>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjdk.nashorn/nashorn-core -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>${nashorn-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-api</artifactId>
+            <version>${javaee-api-version}</version>
+            <scope>provided</scope>
+        </dependency>
+        
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${maven-clean-version}</version>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                            <groupId>com.ibm.cics</groupId>
+                            <artifactId>com.ibm.cics.server.invocation</artifactId>
+                            <version>6.1</version>
+                        </annotationProcessorPath>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven-resources-version}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <minimizeJar>true</minimizeJar>
+                            <!--
+                            <entryPoints>
+                                <entryPoint>com.kiwi1969.nashorn.javascript.main</entryPoint>
+                            </entryPoints>
+                            -->
+                            <transformers>
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>com.kiwi1969.javascript</Main-Class>
+                                        <Build-Date>${maven.build.timestamp}</Build-Date>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <packagingExcludes>pom.xml</packagingExcludes>
+                    <archive>
+						<addMavenDescriptor>false</addMavenDescriptor>
+					</archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
