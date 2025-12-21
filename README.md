@@ -1,4 +1,4 @@
-# H1 cics-nashorn
+# cics-nashorn
 
 This is a demonstration of how Javascript can be executed from CICS Liberty Server, using Open Nashorn
 
