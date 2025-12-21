@@ -27,13 +27,13 @@ This happened for me, so I stayed with a lower version of either 1.0 or 1.1.
 When used via Link-to-Liberty, it passes traffic to via containers
 ie the standard sort of pattern CICS programmers are used to
 ```
-EXEC CICS PUT CHANNEL("MYCHANNEL") CONTAINER("JAVASCRIPT") FROM(MYJS) FLENGTH(MYJSLEN) CHAR/n
-EXEC CICS LINK PROGRAM("NASHORN") CHANNEL("MYCHANNEL")/n
-EXEC CICS GET CHANNEL("MYCHANNEL") CONTAINER("NASHORN_OUT") INTO(OUTPUT) FLENGTH(OUTLEN)/n
+EXEC CICS PUT CHANNEL("MYCHANNEL") CONTAINER("JAVASCRIPT") FROM(MYJS) FLENGTH(MYJSLEN) CHAR
+EXEC CICS LINK PROGRAM("NASHORN") CHANNEL("MYCHANNEL")
+EXEC CICS GET CHANNEL("MYCHANNEL") CONTAINER("NASHORN_OUT") INTO(OUTPUT) FLENGTH(OUTLEN)
 EXEC CICS GET CHANNEL("MYCHANNEL") CONTAINER("ERROR") INTO(OUTPUT) FLENGTH(OUTLEN)
 ```
 
-I actually found Nashorn to be actually pretty fast - The only issue is if you want a newer ECMA standard.
+I actually found Open Nashorn to be actually pretty fast - The only issue is if you want a newer ECMA standard.
 
 One of the best features of Nashorn, is that you can get it to call Java classes.
 So this means that if you have a java class, then you can get Nashorn to call it from within Javascripy
