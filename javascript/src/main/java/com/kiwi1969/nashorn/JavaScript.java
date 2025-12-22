@@ -162,6 +162,8 @@ public class JavaScript extends Application{
     @CICSProgram("NASHORN")
     public static void nashorn() {
 
+        String scriptName = "";
+        String scriptData = "";
         String outStr = "";
         String errStr = "";
         Task t = Task.getTask();
@@ -171,14 +173,33 @@ public class JavaScript extends Application{
             return;
         }
 
+        //We either get a container of js, or we get a filename to load the js from
+
+        // First, we check filename
         try {
-            Container scriptContainer = channel.getContainer("JAVASCRIPT");
-            outStr = eval("", scriptContainer.getString(), false, false);
+            Container scriptContainer = channel.getContainer("FILENAME");
+            scriptName = scriptContainer.getString();
         } catch (ContainerErrorException | LengthErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {
             errStr = e.getMessage();
         }
 
-        if (errStr.isEmpty() && !outStr.isEmpty())
+        // Second, we check for javascript data
+        try {
+            Container scriptContainer = channel.getContainer("JAVASCRIPT");
+            scriptData = scriptContainer.getString();
+        } catch (ContainerErrorException | LengthErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {
+            if (errStr.isEmpty())
+                errStr = errStr + e.getMessage();
+            else 
+                errStr = errStr + ", " + e.getMessage();
+        }
+
+        //If we have either or both, we are fine to evaluate the script
+        //Note: if we have both, we can potentially cache the compiled code, and use name as lookup key        
+        if (!scriptData.isEmpty() || !scriptName.isEmpty()) 
+            outStr = eval(scriptName, scriptData, false, false);
+
+        if (!outStr.isEmpty())
             try {
                 channel.createContainer("NASHORN_OUT").putString(outStr);
             } catch (InvalidRequestException | ContainerErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {

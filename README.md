@@ -26,8 +26,11 @@ This is mainly as I was playing around with different options
 Also, only one JAX-RS app is registered at a time by mpOpenAPI, so if you have 2 Apps, only the first one started will appear in OpenApi UI
 Note - depending on other features, Liberty may conflict/complain, and then you may have to pick a specific version of mpOpenAPI to not clash
 
-When used via Link-to-Liberty, it passes traffic to via containers
-ie the standard sort of pattern CICS programmers are used to
+When used via Link-to-Liberty, it passes traffic to via containers (ie the standard sort of pattern CICS programmers are used to)
+We can pass either 
+* the JAVASCRIPT program in "JAVASCRIPT" container, 
+* the FILENAME of the script to load in "FILENAME" container,
+* both the above (which means we have a chance to cache the compiled bytecode for faster execution on a subsequent call)
 ```
 EXEC CICS PUT CHANNEL("MYCHANNEL") CONTAINER("JAVASCRIPT") FROM(MYJS) FLENGTH(MYJSLEN) CHAR
 EXEC CICS LINK PROGRAM("NASHORN") CHANNEL("MYCHANNEL")
