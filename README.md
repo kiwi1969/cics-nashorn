@@ -37,6 +37,9 @@ EXEC CICS GET CHANNEL("MYCHANNEL") CONTAINER("ERROR") INTO(OUTPUT) FLENGTH(OUTLE
 
 I actually found Open Nashorn to be actually pretty fast - The only issue is if you want a newer ECMA standard.
 
+I found a work-around from here : https://github.com/efwGrp/nashorn-ext-for-es6
+- ie Copy locally, then add this line to your script : `load("nashorn-ext-for-es6.min.js");`
+
 One of the best features of Nashorn, is that you can get it to call Java classes.
-So this means that if you have a java class, then you can get Nashorn to call it from within Javascripy
+So this means that if you have a java class, then you can get Nashorn to call it from within Javascript
 eg JCICS, JCICSX, JZOS, etc. 
