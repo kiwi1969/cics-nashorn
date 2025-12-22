@@ -17,7 +17,7 @@ In my example I use maven to build the cics bundle, which is to be manually copi
 A CICS Bundle definition needs to be defined in the CSD, which when installed, dynamically adds the app to CICS
 
 When used via JAX-RS, it has a few methods.
-This is mainly as I was playingaround with different options
+This is mainly as I was playing around with different options
 * /api/eval is used when you want to pass in a tsring that contains Javascript to execute
 * /api/evalFile is used when you want to programatically read a file from USS, and then execute
 * /api/jsload is used when you want Nashorn itself to read a file from USS, and then execute
