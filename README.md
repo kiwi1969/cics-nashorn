@@ -4,7 +4,14 @@ This is a demonstration of how Javascript can be executed from CICS Liberty Serv
 
 It can accept traffic either via JAX-RS, or via CICS program via the "Link-to-liberty" feature.
 
-`<feature>cicsts:link-1.0</feature>`
+server.xml should be updated to contain these features :
+
+
+```
+<feature>cicsts:link-1.0</feature>
+<feature>jaxrs-2.0</feature>
+<feature>mpOpenAPI-1.1</feature>
+```
 
 In my example I use maven to build the cics bundle, which is to be manually copied to Mainframe USS folder.
 A CICS Bundle definition needs to be defined in the CSD, which when installed, dynamically adds the app to CICS
@@ -16,13 +23,8 @@ This is mainly as I was playingaround with different options
 * /api/jsload is used when you want Nashorn itself to read a file from USS, and then execute
 
 
-**A useful tip is to define liberty feature MpOpenAPI in your server.xml, which automatically build a OpenAPI document and UI**
-
-`<feature>mpOpenAPI-1.0</feature>`
-
-Also, only one JAX-RS app is registered at a time, so if you have 2 Apps, only the first one started will appear in OpenApi UI
+Also, only one JAX-RS app is registered at a time by mpOpenAPI, so if you have 2 Apps, only the first one started will appear in OpenApi UI
 Note - depending on other features, Liberty may conflict/complain, and then you may have to pick a specific version of mpOpenAPI to not clash
-This happened for me, so I stayed with a lower version of either 1.0 or 1.1.
 
 When used via Link-to-Liberty, it passes traffic to via containers
 ie the standard sort of pattern CICS programmers are used to
