@@ -34,12 +34,13 @@ public class JavaScript extends Application{
 
     public static String eval( String name, String js, boolean bInfo, boolean bDebug) {
 
-        StringWriter sw = new StringWriter();
+        final StringWriter sw = new StringWriter();
         if (bInfo)
             sw.write("Received " + name + " : \n" + js + "\n");
         
         NashornScriptEngine nse = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("Nashorn");       
         nse.getContext().setWriter(sw);
+        nse.getContext().setErrorWriter(sw);
 
         CompiledScript compiled = null;
 
@@ -94,12 +95,13 @@ public class JavaScript extends Application{
     }
 
     public static String jsLoad( String filename, boolean bInfo, boolean optDebug) {
-        StringWriter sw = new StringWriter();
+        final StringWriter sw = new StringWriter();
         if (bInfo)
             sw.write("Loading " + filename + "\n\n");
         
         NashornScriptEngine nse = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("Nashorn");       
         nse.getContext().setWriter(sw);
+        nse.getContext().setErrorWriter(sw);
 
         try {
             if (bInfo) {
