@@ -39,7 +39,7 @@ public class JavaScript extends Application {
 
     /* one off process when class loads */
     static {
-        System.out.println(versionString()); /* Note this runs init() in engine == null) */
+        System.out.println(versionString()); /* Note this runs init() if engine == null) */
     }
 
     public static void main(String[] args) throws ScriptException {
