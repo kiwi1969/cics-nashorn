@@ -13,108 +13,114 @@ import com.ibm.cics.server.invocation.CICSProgram;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
-import javax.script.CompiledScript;
-import javax.script.ScriptEngineManager;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-import org.openjdk.nashorn.api.scripting.NashornScriptEngine;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 @ApplicationPath("/nashorn")
-public class JavaScript extends Application{
-    
-    protected static Map <String, CompiledScript> cache = new HashMap<>();
+public class JavaScript extends Application {
+
+    final static String[] arguments = new String[] {"-strict --language=es6","-dump-on-error"};
+
+    //Share one engine for all threads
+    //If use just 1 engine, caching of compiled objects occurs!
+    //Note : Engines are thread-safe, Bindings are not
+    static ScriptEngine engine = null;
+
+    /* one off process when class loads */
+    static {
+        System.out.println(versionString()); /* Note this runs init() in engine == null) */
+    }
+
+    public static void main(String[] args) throws ScriptException {
+        
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        final ScriptEngine engine = factory.getScriptEngine(arguments);
+        final StringWriter sw = new StringWriter();
+        final ScriptContext context = engine.getContext();
+        context.setWriter(sw);
+        context.setErrorWriter(sw);
+        System.out.println(versionString());
+        engine.eval("print('hello world')");
+        System.out.println(sw);
+    }
+
+    static void init() {
+        if (engine == null) {
+            final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+            engine = factory.getScriptEngine(arguments);
+        }
+    }
+
+    /* Note there is this nice extension pack here : https://github.com/efwGrp/nashorn-ext-for-es6
+     * Copy to home folder, then
+     * Add this line to get a bunch of ECMA2015 functionality : load("nashorn-ext-for-es6.min.js");
+     */
 
     public static String eval( String name, String js, boolean bInfo, boolean bDebug) {
 
-        final StringWriter sw = new StringWriter();
-        if (bInfo)
-            sw.write("Received " + name + " : \n" + js + "\n");
-        
-        NashornScriptEngine nse = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("Nashorn");       
-        nse.getContext().setWriter(sw);
-        nse.getContext().setErrorWriter(sw);
-
-        CompiledScript compiled = null;
-
-        if (!name.isEmpty() && cache.containsKey(name)) {
-            compiled = cache.get(name);
-            if (bInfo)
-                sw.write("Executing cached Java bytecode...\n");
-        }
-        else {
-
-            try {
-                if (bInfo) {
-                    sw.write("Compiling to Java bytecode...\n");
-                    long start = Instant.now().toEpochMilli();
-                    compiled = nse.compile(js);
-                    long duration = Instant.now().toEpochMilli() - start;
-                    sw.write("Compile Response Time = " + duration + "ms\n");
-                    if (!name.isEmpty()) {
-                        cache.put(name, compiled);
-                        sw.write("Compiled Bytecode for " + name + " added to cache\n");
-                    }
-                }
-                else {
-                    compiled = nse.compile(js);
-                    if (!name.isEmpty())
-                        cache.put(name, compiled);
-                }
-            }
-            catch (ScriptException e) {
-                sw.write(e.getMessage());
-                return sw.toString();
-            }
-        } 
-        
+        final StringWriter sw = new StringWriter();  
+        final ScriptContext context = engine.getContext();
+        context.setWriter(sw);
+        context.setErrorWriter(sw);
         try {
+            /* If no script supplied, then load it */
+            if (js.isEmpty() && !name.isEmpty()) {
+                if (bInfo)
+                    sw.write("Loading " + name + " (using Java)\n");
+                js = new String(Files.readAllBytes(Paths.get(name)));
+            }
+
             if (bInfo) {
+                sw.write("Received " + name + " : \n" + js + "\n========\n");
+
                 sw.write("\nResponse : \n========\n");
                 long start = Instant.now().toEpochMilli();
-                compiled.eval();
+                engine.eval(js);
                 long duration = Instant.now().toEpochMilli() - start;
-                sw.write("\nJavascript Response Time = " + duration + "ms");
+                sw.write("\nJavascript engine Response Time = " + duration + "ms");
+                
             }
             else
-                compiled.eval();
-
-        }
-        catch (ScriptException e) {
+                engine.eval(js);
+        } catch (IOException | ScriptException e) {
             sw.write(e.getMessage());
         }
-
+    
         return sw.toString();
-    }
+    } 
 
-    public static String jsLoad( String filename, boolean bInfo, boolean optDebug) {
-        final StringWriter sw = new StringWriter();
+    public static String evalURL( String name, boolean bInfo, boolean optDebug) {
+        StringWriter sw = new StringWriter();
         if (bInfo)
-            sw.write("Loading " + filename + "\n\n");
+            sw.write("Nashorn is Loading URL = " + name + " (utilizing Nashorn's internal cache)\n\n");
         
-        NashornScriptEngine nse = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("Nashorn");       
-        nse.getContext().setWriter(sw);
-        nse.getContext().setErrorWriter(sw);
+        final ScriptContext context = engine.getContext();
+        context.setWriter(sw);
+        context.setErrorWriter(sw);
 
         try {
             if (bInfo) {
                 sw.write("Response : \n========\n");
                 long start = Instant.now().toEpochMilli();
-                nse.eval(new FileReader(filename));
+                engine.eval(new FileReader(name));
                 long duration = Instant.now().toEpochMilli() - start;
-                sw.write("\nJavascript Response Time = " + duration + "ms");
+                sw.write("\nJavascript engine Response Time = " + duration + "ms");
             }
             else
-                nse.eval(new FileReader(filename));
+                engine.eval(new FileReader(name));
         }
-        catch (FileNotFoundException|ScriptException e) {
+        catch (FileNotFoundException | ScriptException e) {
             sw.write(e.getMessage());
         } 
 
@@ -122,38 +128,16 @@ public class JavaScript extends Application{
 
     }
 
-    public static String listCache() {
-        StringBuilder sb = new StringBuilder("JavaScript files with cached bytecode :");
-
-        if (cache.isEmpty())
-            sb.append("\nNo script currently in cache");
-        else
-            for (Map.Entry<String, CompiledScript> entry : cache.entrySet()) {
-                sb.append("\n" + entry.getKey());
-            }
-        return sb.toString();
-    }
-
-    public static String discardFile(String key) {
-
-        if (cache == null || key == null || key.isEmpty() )
-            return "Invalid Request";
-
-        if (cache.isEmpty() || !cache.containsKey(key))
-            return "No such file in cache";
-
-        cache.remove(key);
-        return key + " was removed from cache";
-    }
-
     public static String versionString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Nashorn for CICS v1.00 (evaluation/demonstration version - not for commerical use)\n");
-        sb.append("Copyright © 2025 Russell Shaw Software. All Rights Reserved\n");
+        sb.append("Copyright (c) 2025 Russell Shaw Software. All Rights Reserved\n");
 
-        NashornScriptEngine nse = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("Nashorn"); 
-        NashornScriptEngineFactory factory = (NashornScriptEngineFactory) nse.getFactory();     
-        sb.append(factory.getEngineName() + " " + factory.getEngineVersion());
+        if (engine == null)
+            init();
+
+        NashornScriptEngineFactory factory = (NashornScriptEngineFactory) engine.getFactory();     
+        sb.append(factory.getEngineName() + " " + factory.getEngineVersion() + "\n");
 
         return sb.toString();
     }
@@ -162,8 +146,6 @@ public class JavaScript extends Application{
     @CICSProgram("NASHORN")
     public static void nashorn() {
 
-        String scriptName = "";
-        String scriptData = "";
         String outStr = "";
         String errStr = "";
         Task t = Task.getTask();
@@ -173,33 +155,26 @@ public class JavaScript extends Application{
             return;
         }
 
-        //We either get a container of js, or we get a filename to load the js from
+        boolean gotInput = false;
 
-        // First, we check filename
         try {
-            Container scriptContainer = channel.getContainer("FILENAME");
-            scriptName = scriptContainer.getString();
+            Container urlContainer = channel.getContainer("URL");
+            outStr = eval(urlContainer.getString(), "", false, false);
+            gotInput = true;
         } catch (ContainerErrorException | LengthErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {
             errStr = e.getMessage();
         }
 
-        // Second, we check for javascript data
-        try {
-            Container scriptContainer = channel.getContainer("JAVASCRIPT");
-            scriptData = scriptContainer.getString();
-        } catch (ContainerErrorException | LengthErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {
-            if (errStr.isEmpty())
-                errStr = errStr + e.getMessage();
-            else 
-                errStr = errStr + ", " + e.getMessage();
-        }
+        if (!gotInput)
+            try {
+                Container scriptContainer = channel.getContainer("JAVASCRIPT");
+                outStr = eval("", scriptContainer.getString(), false, false);
+                gotInput = true;
+            } catch (ContainerErrorException | LengthErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {
+                errStr = e.getMessage();
+            }
 
-        //If we have either or both, we are fine to evaluate the script
-        //Note: if we have both, we can potentially cache the compiled code, and use name as lookup key        
-        if (!scriptData.isEmpty() || !scriptName.isEmpty()) 
-            outStr = eval(scriptName, scriptData, false, false);
-
-        if (!outStr.isEmpty())
+        if (errStr.isEmpty() && !outStr.isEmpty())
             try {
                 channel.createContainer("NASHORN_OUT").putString(outStr);
             } catch (InvalidRequestException | ContainerErrorException | ChannelErrorException | CCSIDErrorException | CodePageErrorException e) {

@@ -1,9 +1,5 @@
 package com.kiwi1969.nashorn;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -19,85 +15,60 @@ import javax.ws.rs.core.Response;
 
 public class JavaScriptResource {
 
-    /* load file Using Java, compile, cache, and then evaluate */
-    @GET
-    @Path("/evalFile")
-    @Produces(MediaType.TEXT_PLAIN)
-    public static Response load(
-        @QueryParam("jsFile") @DefaultValue("scripts/myscript.js") String jsFile,
-        @QueryParam("info") @DefaultValue("no") String info,
-        @QueryParam("debug") @DefaultValue("no") String debug ) {  
-        boolean bInfo = info.toLowerCase().startsWith("y");
-        boolean bDebug = debug.toLowerCase().startsWith("y");
-        String js = "";
-        try {
-            js = new String(Files.readAllBytes(Paths.get(jsFile)));
-        } catch (IOException e) {
-            String msg = e.toString();
-            return Response.ok().entity(msg).build();
-        }       
-        return Response.ok()
-            .entity(JavaScript.eval(jsFile, js, bInfo, bDebug))
-            .build();
-    }
-
-    /* load and evaluate file Using JavaScript itself - this method doesn't use the cache 
-     * but allows for URL or filename
-    */
-    @GET
-    @Path("/jsload")
-    @Produces(MediaType.TEXT_PLAIN)
-    public static Response jsload(
-        @QueryParam("jsPath") @DefaultValue("scripts/myscript.js") String jsPath,
-        @QueryParam("info") @DefaultValue("no") String info,
-        @QueryParam("debug") @DefaultValue("no") String debug ) { 
-        boolean bInfo = info.toLowerCase().startsWith("y");
-        boolean bDebug = debug.toLowerCase().startsWith("y");
-        
-        return Response.ok()
-            .entity(JavaScript.jsLoad(jsPath, bInfo, bDebug ))
-            .build();
-    }
-
     /* This executes the given Javascript (supplied via body text) */
     @POST
     @Path("/eval")
     @Consumes("text/javascript")
     @Produces(MediaType.TEXT_PLAIN)
-    
+        
     public static Response eval(@QueryParam("info") @DefaultValue("no") String info, String js) {
         boolean bInfo = info.toLowerCase().startsWith("y");
-
+    
         return Response.ok()
             .entity(JavaScript.eval("", js, bInfo, false))
             .build(); 
     }
 
-    /* show what is in the cache */
+    /* load file Using Java, compile, cache, and then evaluate */
     @GET
-    @Path("/listCache")
+    @Path("/evalFile")
     @Produces(MediaType.TEXT_PLAIN)
-            
-    public static Response listCache() {
-        
+    public static Response evalFile(
+        @QueryParam("jsFile") @DefaultValue("scripts/myscript.js") String jsFile,
+        @QueryParam("info") @DefaultValue("no") String info,
+        @QueryParam("debug") @DefaultValue("no") String debug ) {  
+
+        boolean bInfo = info.toLowerCase().startsWith("y");
+        boolean bDebug = debug.toLowerCase().startsWith("y");
+
+        if (jsFile.isEmpty())
+            return Response.ok()
+                .entity("No javascript supplied!")
+                .build();
+             
         return Response.ok()
-            .entity(JavaScript.listCache())
-            .build(); 
+            .entity(JavaScript.eval(jsFile, "", bInfo, bDebug))
+            .build();
     }
 
-    /* discard a file to the cache */
+    /* let Nashorn load, cache, and then evaluate */
     @GET
-    @Path("/discardCachedFile")
+    @Path("/evalURL")
     @Produces(MediaType.TEXT_PLAIN)
+    public static Response evalURL(
+        @QueryParam("jsPath") @DefaultValue("scripts/myscript.js") String url,
+        @QueryParam("info") @DefaultValue("no") String info,
+        @QueryParam("debug") @DefaultValue("no") String debug ) {
+
+        boolean bInfo = info.toLowerCase().startsWith("y");
+        boolean bDebug = debug.toLowerCase().startsWith("y");
         
-    public static Response discardCachedFile(@QueryParam("jsPath") @DefaultValue("scripts/myscript.js") String jsPath) {
-    
         return Response.ok()
-            .entity(JavaScript.discardFile(jsPath))
-            .build(); 
+            .entity(JavaScript.evalURL(url, bInfo, bDebug ))
+            .build();
     }
 
-    /* discard a file to the cache */
+    /* Program info */
     @GET
     @Path("/about")
     @Produces(MediaType.TEXT_PLAIN)
